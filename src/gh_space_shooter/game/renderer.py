@@ -34,8 +34,11 @@ class Renderer:
         """
         # Create image with background color
         img = Image.new("RGB", (self.width, self.height), self.context.grid_color)
-        draw = ImageDraw.Draw(img)
-
-        # Draw all game objects (including grid) using their draw() methods
+        
+        # Draw game state
+        overlay = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay, "RGBA")
         self.game_state.draw(draw, self.context)
-        return img
+        combined = Image.alpha_composite(img.convert("RGBA"), overlay)
+        
+        return combined.convert("RGB").convert("P", palette=Image.Palette.ADAPTIVE)
