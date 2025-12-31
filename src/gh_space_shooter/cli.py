@@ -8,6 +8,8 @@ import typer
 from dotenv import load_dotenv
 from rich.console import Console
 
+from gh_space_shooter.game.strategies.base_strategy import BaseStrategy
+
 from .console_printer import ContributionConsolePrinter
 from .game import Animator, ColumnStrategy, RandomStrategy, RowStrategy
 from .github_client import ContributionData, GitHubAPIError, GitHubClient
@@ -48,7 +50,7 @@ def main(
         help="Generate animated GIF visualization",
     ),
     strategy: str = typer.Option(
-        "column",
+        "random",
         "--strategy",
         "-s",
         help="Strategy for clearing enemies (column, row, random)",
@@ -68,12 +70,14 @@ def main(
       gh-space-shooter --raw-input data.json
     """
     try:
+        if not username:
+            raise CLIError("Username is required when not using --raw-input")
+        if not out:
+            out = f"{username}-gh-space-shooter.gif"
         # Load data from file or GitHub
         if raw_input:
             data = _load_data_from_file(raw_input)
         else:
-            if not username:
-                raise CLIError("Username is required when not using --raw-input")
             data = _load_data_from_github(username)
 
         # Display the data
@@ -86,8 +90,7 @@ def main(
             _save_data_to_file(data, raw_output)
 
         # Generate GIF if requested
-        if out:
-            _generate_gif(data, out, strategy)
+        _generate_gif(data, out, strategy)
 
     except CLIError as e:
         err_console.print(f"[bold red]Error:[/bold red] {e}")
@@ -147,9 +150,8 @@ def _generate_gif(data: ContributionData, file_path: str, strategy_name: str) ->
     """Generate animated GIF visualization."""
     console.print("\n[bold blue]Generating GIF animation...[/bold blue]")
 
-    # Select strategy
     if strategy_name == "column":
-        strategy = ColumnStrategy()
+        strategy: BaseStrategy = ColumnStrategy()
     elif strategy_name == "row":
         strategy = RowStrategy()
     elif strategy_name == "random":
