@@ -4,19 +4,51 @@ Transform your GitHub contribution graph into an epic space shooter game!
 
 ![Example Game](example.gif)
 
-## Features
+## Usage
 
-- 🚀 **Galaga-style space shooter** - Classic arcade gameplay with your contribution data
-- 📊 **GitHub integration** - Fetches your last 52 weeks of contributions automatically
-- 🎮 **Smart enemy AI** - Multiple attack strategies (columns, rows, random patterns)
-- 💥 **Particle effects** - Explosions with randomized particles and smooth animations
-- 🎨 **Polished graphics** - Rounded enemies, smooth ship design, starfield background
-- 📈 **Contribution stats** - View your coding activity statistics
-- 💾 **Export options** - Save both the GIF and raw JSON data
+### GitHub Action
 
-## Installation
+Automatically update your game GIF daily using GitHub Actions! Add this workflow to your repository at `.github/workflows/update-game.yml`:
 
-### From PyPI (Recommended)
+```yaml
+name: Update Space Shooter Game
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  update-game:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: czl9707/gh-space-shooter@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          output-path: 'game.gif'
+          strategy: 'random'
+```
+
+Then display it in your README:
+```markdown
+![My GitHub Game](game.gif)
+```
+
+**Action Inputs:**
+- `github-token` (required): GitHub token for fetching contributions
+- `username` (optional): Username to generate game for (defaults to repo owner)
+- `output-path` (optional): Where to save the GIF (default: `gh-space-shooter.gif`)
+- `strategy` (optional): Attack pattern - `column`, `row`, or `random` (default: `random`)
+- `commit-message` (optional): Commit message for the update
+
+See [ACTION.md](ACTION.md) for more examples and detailed documentation.
+
+### From PyPI
 
 ```bash
 pip install gh-space-shooter
