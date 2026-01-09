@@ -8,8 +8,8 @@ import typer
 from dotenv import load_dotenv
 from rich.console import Console
 
-from gh_space_shooter.game.strategies.base_strategy import BaseStrategy
-
+from .constants import DEFAULT_FPS
+from .game.strategies.base_strategy import BaseStrategy
 from .console_printer import ContributionConsolePrinter
 from .game import Animator, ColumnStrategy, RandomStrategy, RowStrategy
 from .github_client import ContributionData, GitHubAPIError, GitHubClient
@@ -56,7 +56,7 @@ def main(
         help="Strategy for clearing enemies (column, row, random)",
     ),
     fps: int = typer.Option(
-        50,
+        DEFAULT_FPS,
         "--fps",
         "-f",
         help="Frames per second for the animation (default: 50)",

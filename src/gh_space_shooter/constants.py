@@ -1,7 +1,7 @@
 """Global constants for the application."""
 
 # Animation settings
-DEFAULT_FPS = 50  # Default frames per second for animation
+DEFAULT_FPS = 40  # Default frames per second for animation
 
 # GitHub contribution graph dimensions
 NUM_WEEKS = 52  # Number of weeks in contribution graph
