@@ -58,8 +58,7 @@ def main(
     fps: int = typer.Option(
         DEFAULT_FPS,
         "--fps",
-        "-f",
-        help="Frames per second for the animation (default: 50)",
+        help="Frames per second for the animation",
     ),
 ) -> None:
     """
