@@ -7,10 +7,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.requests import Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from gh_space_shooter.constants import DEFAULT_FPS
 from gh_space_shooter.game import Animator, ColumnStrategy, RandomStrategy, RowStrategy, BaseStrategy
 from gh_space_shooter.github_client import GitHubAPIError, GitHubClient
 
@@ -35,8 +34,8 @@ def generate_gif(username: str, strategy: str, token: str) -> BytesIO:
     strategy_class: type[BaseStrategy] = STRATEGY_MAP.get(strategy, RandomStrategy)
     strat = strategy_class()
 
-    animator = Animator(data, strat, fps=DEFAULT_FPS)
-    return animator.generate_gif(maxFrame=None)
+    animator = Animator(data, strat, fps=25, watermark=True)
+    return animator.generate_gif(maxFrame=250)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -63,10 +62,13 @@ async def generate(
 
     try:
         gif_buffer = generate_gif(username, strategy, token)
-        return StreamingResponse(
-            gif_buffer,
+        return Response(
+            content=gif_buffer.getvalue(),
             media_type="image/gif",
-            headers={"Content-Disposition": f"inline; filename={username}-space-shooter.gif"},
+            headers={
+                "Response-Type": "blob",
+                "Content-Disposition": f"inline; filename={username}-space-shooter.gif"
+            },
         )
     except GitHubAPIError as e:
         raise HTTPException(status_code=400, detail=f"GitHub API error: {e}")
