@@ -45,11 +45,12 @@ jobs:
     - name: Publish
       run: uv publish --token ${{ secrets.PYPI_API_TOKEN }}
 
-    - name: GitHub Release v${{ steps.bump.outputs.current-version }}
+    - name: GitHub Release PIP v${{ steps.bump.outputs.current-version }}
       uses: ncipollo/release-action@v1
       with:
-        name: gh-space-shooter v${{ steps.bump.outputs.current-version }}
+        name: gh-space-shooter pypi v${{ steps.bump.outputs.current-version }}
         tag: v${{ steps.bump.outputs.current-version }}
-        body: "Automated release of version v${{ steps.bump.outputs.current-version }}"
+        body: "Automated release of pypi version v${{ steps.bump.outputs.current-version }}"
         artifacts: dist/*
         token: ${{ secrets.GH_TOKEN }}
+        generateReleaseNotes: true
