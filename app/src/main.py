@@ -19,7 +19,7 @@ load_dotenv()
 app = FastAPI(title="GitHub Space Shooter")
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
-app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+app.mount("/public", StaticFiles(directory=Path(__file__).parent / "public"), name="public")
 
 
 STRATEGY_MAP: dict[str, type[BaseStrategy]] = {
