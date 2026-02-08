@@ -13,6 +13,7 @@ from .game.strategies.base_strategy import BaseStrategy
 from .console_printer import ContributionConsolePrinter
 from .game import Animator, ColumnStrategy, RandomStrategy, RowStrategy
 from .github_client import ContributionData, GitHubAPIError, GitHubClient
+from .output import resolve_output_provider
 
 # Load environment variables from .env file
 load_dotenv()
@@ -47,7 +48,7 @@ def main(
         "--output",
         "-out",
         "-o",
-        help="Generate animated GIF visualization",
+        help="Generate animated visualization (GIF or WebP)",
     ),
     strategy: str = typer.Option(
         "random",
@@ -104,8 +105,8 @@ def main(
         if raw_output:
             _save_data_to_file(data, raw_output)
 
-        # Generate GIF if requested
-        _generate_gif(data, out, strategy, fps, watermark, maxFrame)
+        # Generate output if requested
+        _generate_output(data, out, strategy, fps, watermark, maxFrame)
 
     except CLIError as e:
         err_console.print(f"[bold red]Error:[/bold red] {e}")
@@ -161,23 +162,28 @@ def _save_data_to_file(data: ContributionData, file_path: str) -> None:
         raise CLIError(f"Failed to save file '{file_path}': {e}")
 
 
-def _generate_gif(
-    data: ContributionData, 
-    file_path: str, 
-    strategy_name: str, 
-    fps: int, 
-    watermark: bool, 
-    maxFrame: int | None
+def _generate_output(
+    data: ContributionData,
+    file_path: str,
+    strategy_name: str,
+    fps: int,
+    watermark: bool,
+    maxFrame: int | None,
 ) -> None:
-    """Generate animated GIF visualization."""
-    # GIF format limitation: delays below 20ms (>50 FPS) are clamped by most browsers
-    if fps > 50:
+    """Generate animation in the format specified by file_path extension."""
+    from pathlib import Path
+
+    # Warn about GIF FPS limitation
+    if file_path.endswith(".gif") and fps > 50:
         console.print(
             f"[yellow]Warning:[/yellow] FPS > 50 may not display correctly in browsers "
             f"(GIF delay will be {1000 // fps}ms, but browsers clamp delays < 20ms to ~100ms)"
         )
-    console.print("\n[bold blue]Generating GIF animation...[/bold blue]")
 
+    ext = Path(file_path).suffix[1:].upper()  # Remove dot and uppercase
+    console.print(f"\n[bold blue]Generating {ext} animation...[/bold blue]")
+
+    # Resolve strategy
     if strategy_name == "column":
         strategy: BaseStrategy = ColumnStrategy()
     elif strategy_name == "row":
@@ -189,17 +195,29 @@ def _generate_gif(
             f"Unknown strategy '{strategy_name}'. Available: column, row, random"
         )
 
-    # Create animator and generate GIF
+    # Resolve output provider
+    try:
+        provider = resolve_output_provider(file_path, fps=fps, watermark=watermark)
+    except ValueError as e:
+        raise CLIError(str(e))
+
+    # Generate animation
     try:
         animator = Animator(data, strategy, fps=fps, watermark=watermark)
-        buffer = animator.generate_gif(maxFrame=maxFrame)
-        console.print("[bold blue]Saving GIF animation...[/bold blue]")
-        with open(file_path, "wb") as f:
-            f.write(buffer.getvalue())
 
-        console.print(f"[green]✓[/green] GIF saved to {file_path}")
+        if maxFrame:
+            frames = list(animator.generate_frames())[:maxFrame]
+            encoded = provider.encode(iter(frames))
+        else:
+            encoded = provider.encode(animator.generate_frames())
+
+        console.print(f"[bold blue]Saving to {file_path}...[/bold blue]")
+        with open(file_path, "wb") as f:
+            f.write(encoded)
+
+        console.print(f"[green]✓[/green] {ext} saved to {file_path}")
     except Exception as e:
-        raise CLIError(f"Failed to generate GIF: {e}")
+        raise CLIError(f"Failed to generate animation: {e}")
 
 
 app = typer.Typer()
