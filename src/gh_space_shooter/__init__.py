@@ -7,6 +7,7 @@ from .github_client import (
     GitHubAPIError,
     GitHubClient,
 )
+from .output import resolve_output_provider
 
 __version__ = "0.1.0"
 
@@ -16,4 +17,5 @@ __all__ = [
     "ContributionData",
     "ContributionDay",
     "ContributionWeek",
+    "resolve_output_provider",
 ]
