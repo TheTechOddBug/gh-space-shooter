@@ -1,27 +1,9 @@
 """Tests for output providers."""
 
-import pytest
 from PIL import Image
-from gh_space_shooter.output.base import OutputProvider
+import pytest
 from gh_space_shooter.output import GifOutputProvider, WebPOutputProvider, resolve_output_provider
 
-
-def test_output_provider_is_abstract():
-    """OutputProvider cannot be instantiated directly."""
-    with pytest.raises(TypeError):
-        OutputProvider(fps=30)
-
-
-def test_output_provider_has_required_attributes():
-    """Concrete OutputProvider should have fps, watermark, frame_duration."""
-    class DummyProvider(OutputProvider):
-        def encode(self, frames):
-            return b""
-
-    provider = DummyProvider(fps=30, watermark=True)
-    assert provider.fps == 30
-    assert provider.watermark is True
-    assert provider.frame_duration == 33  # 1000 // 30
 
 
 def create_test_frame(color="red"):
@@ -32,10 +14,10 @@ def create_test_frame(color="red"):
 
 def test_gif_provider_encodes_frames():
     """GifOutputProvider should encode frames to GIF format."""
-    provider = GifOutputProvider(fps=30)
+    provider = GifOutputProvider()
     frames = [create_test_frame("red"), create_test_frame("blue")]
 
-    result = provider.encode(iter(frames))
+    result = provider.encode(iter(frames), frame_duration=100)
 
     assert result.startswith(b"GIF89")
     assert len(result) > 0
@@ -43,8 +25,8 @@ def test_gif_provider_encodes_frames():
 
 def test_gif_provider_empty_frames():
     """GifOutputProvider should handle empty frame list."""
-    provider = GifOutputProvider(fps=30)
-    result = provider.encode(iter([]))
+    provider = GifOutputProvider()
+    result = provider.encode(iter([]), frame_duration=100)
 
     # Empty result for empty frames
     assert result == b""
@@ -52,10 +34,10 @@ def test_gif_provider_empty_frames():
 
 def test_webp_provider_encodes_frames():
     """WebPOutputProvider should encode frames to WebP format."""
-    provider = WebPOutputProvider(fps=30)
+    provider = WebPOutputProvider()
     frames = [create_test_frame("red"), create_test_frame("blue")]
 
-    result = provider.encode(iter(frames))
+    result = provider.encode(iter(frames), frame_duration=100)
 
     # WebP files start with RIFF....WEBP
     assert result.startswith(b"RIFF")
@@ -65,40 +47,37 @@ def test_webp_provider_encodes_frames():
 
 def test_webp_provider_empty_frames():
     """WebPOutputProvider should handle empty frame list."""
-    provider = WebPOutputProvider(fps=30)
-    result = provider.encode(iter([]))
+    provider = WebPOutputProvider()
+    result = provider.encode(iter([]), frame_duration=100)
 
     assert result == b""
 
 
 def test_resolve_gif_provider():
     """resolve_output_provider should return GifOutputProvider for .gif files."""
-    provider = resolve_output_provider("output.gif", fps=30, watermark=True)
+    provider = resolve_output_provider("output.gif")
 
     assert isinstance(provider, GifOutputProvider)
-    assert provider.fps == 30
-    assert provider.watermark is True
+
 
 
 def test_resolve_webp_provider():
     """resolve_output_provider should return WebPOutputProvider for .webp files."""
-    provider = resolve_output_provider("output.webp", fps=25)
+    provider = resolve_output_provider("output.webp")
 
     assert isinstance(provider, WebPOutputProvider)
-    assert provider.fps == 25
-    assert provider.watermark is False
 
 
 def test_resolve_unsupported_format():
     """resolve_output_provider should raise ValueError for unsupported formats."""
     with pytest.raises(ValueError, match="Unsupported output format"):
-        resolve_output_provider("output.mp4", fps=30)
+        resolve_output_provider("output.mp4")
 
 
 def test_resolve_case_insensitive():
     """resolve_output_provider should handle uppercase extensions."""
-    provider = resolve_output_provider("output.GIF", fps=30)
+    provider = resolve_output_provider("output.GIF", )
     assert isinstance(provider, GifOutputProvider)
 
-    provider = resolve_output_provider("output.WEBP", fps=30)
+    provider = resolve_output_provider("output.WEBP", )
     assert isinstance(provider, WebPOutputProvider)
