@@ -40,36 +40,24 @@ class Animator:
         # Used to scale all speeds (cells/second) to per-frame movement
         self.delta_time = 1.0 / fps
 
-    def generate_gif(self, maxFrame: int | None) -> BytesIO:
+    def generate_frames(self, max_frames: int | None = None) -> Iterator[Image.Image]:
         """
-        Generate animated GIF and save to file.
+        Generate all animation frames.
 
-        Args:
-            output_path: Path where GIF should be saved
+        Returns:
+            Iterator of PIL Images representing animation frames
         """
-        # Initialize game state
         game_state = GameState(self.contribution_data)
         renderer = Renderer(game_state, RenderContext.darkmode(), watermark=self.watermark)
-
-        frames: list[Image.Image] = []
-        for frame in self._generate_frames(game_state, renderer):
-            frames.append(frame)
-            if maxFrame is not None and len(frames) >= maxFrame:
-                break
-
-        gif_buffer = BytesIO()
-        if frames:
-            frames[0].save(
-                gif_buffer,
-                format="gif",
-                save_all=True,
-                append_images=frames[1:],
-                duration=self.frame_duration,
-                loop=0,  # Loop forever
-                optimize=False,
-            )
         
-        return gif_buffer
+        if max_frames is not None:
+            gen = self._generate_frames(game_state, renderer)
+            while max_frames > 0:
+                max_frames -= 1
+                yield next(gen)
+        else:
+            yield from self._generate_frames(game_state, renderer)
+        
 
     def _generate_frames(
         self, game_state: GameState, renderer: Renderer

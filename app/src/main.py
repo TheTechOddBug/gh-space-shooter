@@ -1,7 +1,6 @@
 """FastAPI web app for gh-space-shooter GIF generation."""
 
 import os
-from io import BytesIO
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -13,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 
 from gh_space_shooter.game import Animator, ColumnStrategy, RandomStrategy, RowStrategy, BaseStrategy
 from gh_space_shooter.github_client import GitHubAPIError, GitHubClient
+from gh_space_shooter.output import GifOutputProvider
 
 load_dotenv()
 
@@ -29,8 +29,8 @@ STRATEGY_MAP: dict[str, type[BaseStrategy]] = {
 }
 
 
-def generate_gif(username: str, strategy: str, token: str) -> BytesIO:
-    """Generate a space shooter GIF for a GitHub user."""
+def generate_gif(username: str, strategy: str, token: str) -> bytes:
+    """Generate a space shooter animation for a GitHub user."""
     with GitHubClient(token) as client:
         data = client.get_contribution_graph(username)
 
@@ -38,7 +38,9 @@ def generate_gif(username: str, strategy: str, token: str) -> BytesIO:
     strat = strategy_class()
 
     animator = Animator(data, strat, fps=25, watermark=True)
-    return animator.generate_gif(maxFrame=250)
+    provider = GifOutputProvider()
+    encoded = provider.encode(animator.generate_frames(max_frames=250), frame_duration=1000 // 25)
+    return encoded
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -51,7 +53,7 @@ async def generate(
     username: str = Query(..., min_length=1, description="GitHub username"),
     strategy: str = Query("random", description="Animation strategy"),
 ):
-    """Generate and return a space shooter GIF."""
+    """Generate and return a space shooter animation."""
     token = os.getenv("GH_TOKEN")
     if not token:
         raise HTTPException(status_code=500, detail="GitHub token not configured")
@@ -63,16 +65,18 @@ async def generate(
         )
 
     try:
-        gif_buffer = generate_gif(username, strategy, token)
+        encoded = generate_gif(username, strategy, token)
         return Response(
-            content=gif_buffer.getvalue(),
+            content=encoded,
             media_type="image/gif",
             headers={
                 "Response-Type": "blob",
                 "Content-Disposition": f"inline; filename={username}-space-shooter.gif"
             },
         )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except GitHubAPIError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate GIF: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate animation: {e}")
