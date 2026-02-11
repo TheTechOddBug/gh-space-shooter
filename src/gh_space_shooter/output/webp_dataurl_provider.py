@@ -1,6 +1,7 @@
 """WebP data URL output provider."""
 
 import base64
+import os
 from io import BytesIO
 from typing import Iterator
 from PIL import Image
@@ -74,18 +75,16 @@ class WebpDataUrlOutputProvider(OutputProvider):
         Returns:
             The content that was written (for return value consistency)
         """
-        import os
-
-        # If file doesn't exist, create it with the data URL
-        if not os.path.exists(self.output_path):
+        # Try to create new file exclusively (avoids TOCTOU race condition)
+        try:
             written = data_url + "\n"
-            with open(self.output_path, "w") as f:
+            with open(self.output_path, "x") as f:
                 f.write(written)
             return written
-
-        # File exists - read contents
-        with open(self.output_path, "r") as f:
-            content = f.read()
+        except FileExistsError:
+            # File exists - read contents
+            with open(self.output_path, "r") as f:
+                content = f.read()
 
         # Check for marker
         if _MARKER in content:
