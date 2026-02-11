@@ -50,7 +50,7 @@ class Renderer:
 
         combined = Image.alpha_composite(img.convert("RGBA"), overlay)
 
-        return combined.convert("RGB").convert("P", palette=Image.Palette.ADAPTIVE)
+        return combined.convert("RGB")
 
     def _draw_watermark(self, draw: ImageDraw.ImageDraw) -> None:
         """Draw watermark text in the bottom-right corner."""

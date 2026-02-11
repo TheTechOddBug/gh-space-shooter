@@ -30,6 +30,9 @@ class WebPOutputProvider(OutputProvider):
                 append_images=frame_list[1:],
                 duration=frame_duration,
                 loop=0,
+                lossless=True,
+                quality=100,
+                method=4,
             )
 
         return buffer.getvalue()
