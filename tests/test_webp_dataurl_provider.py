@@ -55,3 +55,26 @@ def test_injection_mode_replaces_marker_line():
         assert lines[0] == "# My Contribution Graph"
         assert lines[1].startswith("data:image/webp;base64,")
         assert lines[2] == "## Other content"
+
+
+def test_append_mode_when_no_marker():
+    """Provider should append data URL when no marker found."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_path = os.path.join(tmpdir, "output.txt")
+
+        # Create file without marker
+        with open(output_path, "w") as f:
+            f.write("# My Contribution Graph\n")
+
+        provider = WebpDataUrlOutputProvider(output_path)
+        frames = [create_test_frame("red")]
+        provider.encode(iter(frames), frame_duration=100)
+
+        # Verify append worked
+        with open(output_path, "r") as f:
+            content = f.read()
+
+        lines = content.splitlines()
+        assert len(lines) == 2
+        assert lines[0] == "# My Contribution Graph"
+        assert lines[1].startswith("data:image/webp;base64,")
