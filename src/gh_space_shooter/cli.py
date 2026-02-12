@@ -54,7 +54,6 @@ def main(
     write_dataurl_to: str = typer.Option(
         None,
         "--write-dataurl-to",
-        "-wdt",
         help="Generate WebP as data URL and write to text file",
     ),
     strategy: str = typer.Option(
