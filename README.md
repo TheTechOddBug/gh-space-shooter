@@ -134,6 +134,8 @@ This creates an animated GIF showing:
 
 For direct embedding in READMEs or HTML files, use `--write-dataurl-to` to generate a WebP data URL wrapped in an HTML `<img>` tag:
 
+> Note: This not necessarily will work. The .webp can grow over 1 MB very easily, which github will just refuse to render.
+
 ```bash
 # Generate data URL and write to README.md
 gh-space-shooter torvalds --write-dataurl-to README.md
